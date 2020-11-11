@@ -102,11 +102,11 @@ char *gcc::tokenizer::get_operand(char *ptr)
 
 gcc_error_t gcc::tokenizer::tokenize(char *file)
 {
-    char *ptr;
+    char *ptr, *saveptr;
 
     DEBUG("tokenizing %s\n", file);
 
-    if (!(ptr = read_file(file))) {
+    if (!(ptr = saveptr = read_file(file))) {
         ERROR("failed to read file %s\n", file);
         return gcc_errno;
     }
@@ -128,6 +128,7 @@ gcc_error_t gcc::tokenizer::tokenize(char *file)
         return GCC_INVALID_VALUE;
     }
 
+    free(saveptr);
     return GCC_SUCCESS;
 }
 
