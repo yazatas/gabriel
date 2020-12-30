@@ -12,13 +12,76 @@ namespace gcc {
         TT_MUL,
         TT_ADD,
         TT_SUB,
-        TT_DIV
+        TT_DIV,
+        TT_BREAK,
+        TT_CASE,
+        TT_CHAR,
+        TT_CONST,
+        TT_CONTINUE,
+        TT_DEFAULT,
+        TT_DO,
+        TT_DOUBLE,
+        TT_ELSE,
+        TT_ENUM,
+        TT_EXTERN,
+        TT_FLOAT,
+        TT_FOR,
+        TT_GOTO,
+        TT_IF,
+        TT_INLINE,
+        TT_INT,
+        TT_LONG,
+        TT_REGISTER,
+        TT_RESTRICT,
+        TT_RETURN,
+        TT_SHORT,
+        TT_SIGNED,
+        TT_SIZEOF,
+        TT_STATIC,
+        TT_STRUCT,
+        TT_SWITCH,
+        TT_TYPEDEF,
+        TT_UNION,
+        TT_UNSIGNED,
+        TT_VOID,
+        TT_VOLATILE,
+        TT_WHILE,
+        TT_U8,
+        TT_U16,
+        TT_U32,
+        TT_U64,
+        TT_I8,
+        TT_I16,
+        TT_I32,
+        TT_I64,
+        TT_SIZET,
+        TT_LAST
     } token_type_t;
 
     typedef struct token {
         token_type_t type;
-        int value;
+        union {
+            int value;
+            int id;
+        };
     } token_t;
+
+    static inline const char *test_func(token_type_t type)
+    {
+        static const char *names[] = {
+            "invalid",
+            "end",
+            "digit",
+            "mul",
+            "add",
+            "sub",
+            "div",
+        };
+
+        if (type < TT_INVALID || type >= TT_LAST)
+            return names[0];
+        return names[type];
+    }
 
     typedef struct token_stream {
         std::deque<token_t> tokens_;

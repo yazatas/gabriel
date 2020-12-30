@@ -82,6 +82,32 @@ bool gcc::tokenizer::isoperand(char c)
     }
 }
 
+bool gcc::tokenizer::iskeyword(char *ptr)
+{
+    const char *keywords[] = {
+        "break",    "case",     "char",     "const",
+        "continue", "default",  "do",       "double",
+        "else",     "enum",     "extern",   "float",
+        "for",      "goto",     "if",       "inline",
+        "int",      "long",     "register", "restrict",
+        "return",   "short",    "signed",   "sizeof",
+        "static",   "struct",   "switch",   "typedef",
+        "union",    "unsigned", "void",     "volatile",
+        "while",    "uint8_t",  "uint16_t", "uint32_t",
+        "uint64_t", "int8_t",   "int16_t",  "int32_t",
+        "int64_t",  "size_t"
+    };
+
+    for (int i = 0; i < 42; ++i) {
+        if (!strncmp(ptr, keywords[i], strlen(keywords[i]))) {
+            if (!isalnum(*(ptr + strlen(keywords[i]))) && *(ptr + strlen(keywords[i])) != '_')
+                return true;
+        }
+    }
+
+    return false;
+}
+
 char *gcc::tokenizer::get_number(char *ptr)
 {
     int value = 0;
@@ -116,6 +142,32 @@ char *gcc::tokenizer::get_operand(char *ptr)
     return ptr + 1;
 }
 
+char *gcc::tokenizer::get_keyword(char *ptr)
+{
+    const char *keywords[] = {
+        "break",    "case",     "char",     "const",
+        "continue", "default",  "do",       "double",
+        "else",     "enum",     "extern",   "float",
+        "for",      "goto",     "if",       "inline",
+        "int",      "long",     "register", "restrict",
+        "return",   "short",    "signed",   "sizeof",
+        "static",   "struct",   "switch",   "typedef",
+        "union",    "unsigned", "void",     "volatile",
+        "while",    "uint8_t",  "uint16_t", "uint32_t",
+        "uint64_t", "int8_t",   "int16_t",  "int32_t",
+        "int64_t",  "size_t"
+    };
+
+    for (int i = 0; i < 42; ++i) {
+        if (!strncmp(ptr, keywords[i], strlen(keywords[i]))) {
+            if (!isalnum(*(ptr + strlen(keywords[i]))) && *(ptr + strlen(keywords[i])) != '_') {
+                tokens_.add({ });
+                return ptr + strlen(keywords[i]);
+            }
+        }
+    }
+}
+
 gcc_error_t gcc::tokenizer::tokenize(char *file)
 {
     char *ptr, *saveptr;
@@ -138,6 +190,10 @@ gcc_error_t gcc::tokenizer::tokenize(char *file)
             continue;
         } else if (isoperand(*ptr)) {
             if (!(ptr = get_operand(ptr)))
+                return GCC_INVALID_VALUE;
+            continue;
+        } else if (iskeyword(ptr)) {
+            if (!(ptr = get_keyword(ptr)))
                 return GCC_INVALID_VALUE;
             continue;
         }

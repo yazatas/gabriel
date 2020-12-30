@@ -41,6 +41,12 @@ namespace gcc {
             /* is "c" an operand (*, +, -, &&, <<, etc.)*/
             bool isoperand(char c);
 
+            /* extract keyword from the stream into a token */
+            char *get_keyword(char *ptr);
+
+            /* is a defined keyword such as extern, bool, while etc. */
+            bool iskeyword(char *ptr);
+
             gcc::token_stream_t tokens_;
     };
 };
