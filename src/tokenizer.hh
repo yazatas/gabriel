@@ -29,6 +29,9 @@ namespace gcc {
             /* skip whitespace characters */
             char *skip_ws(char *ptr);
 
+            /* skip comments */
+            char *skip_comments(char *ptr);
+
             /* extract number from the stream into a token */
             char *get_number(char *ptr);
 

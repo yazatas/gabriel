@@ -53,6 +53,22 @@ char *gcc::tokenizer::skip_ws(char *ptr)
     return ptr;
 }
 
+char *gcc::tokenizer::skip_comments(char *ptr)
+{
+    if (*ptr == '/' && *(ptr + 1) == '/') {
+        while (*ptr != '\n')
+            ptr++;
+        ptr++;
+    } else if (*ptr == '/' && *(ptr + 1) == '*') {
+        ptr += 2;
+
+        while (*ptr != '*' && *(ptr + 1) != '/')
+            ptr++;
+    }
+
+    return ptr;
+}
+
 bool gcc::tokenizer::isoperand(char c)
 {
     switch (c) {
@@ -113,6 +129,8 @@ gcc_error_t gcc::tokenizer::tokenize(char *file)
 
     while (*ptr) {
         if (!*(ptr = skip_ws(ptr)))
+            break;
+        if (!*(ptr = skip_comments(ptr)))
             break;
 
         if (isdigit(*ptr)) {
