@@ -69,17 +69,27 @@ char *gcc::tokenizer::skip_comments(char *ptr)
     return ptr;
 }
 
-bool gcc::tokenizer::isoperand(char c)
+bool gcc::tokenizer::isoperator(char *ptr)
 {
-    switch (c) {
-        case '*':
-        case '+':
-        case '-':
-        case '/':
+    const char *operators[] = {
+        "&", "|", "^", "~",
+        "*", "-", "/", "+",
+        "*=", "-=", "/=", "+=",
+        "&&", "||", "==", ">=",
+        "<=", "<<", ">>", "<<=",
+        ">>=", "^=", "++", "--"
+        "(", ")", "[", "]", 
+        "{", "}", "?", ":", 
+        "!", ";", ",", ".", 
+        "<", ">"
+    };
+
+    for (int i = 0; i < 34; ++i) {
+        if (!strncmp(ptr, operators[i], strlen(operators[i])))
             return true;
-        default:
-            return false;
     }
+
+    return false;
 }
 
 bool gcc::tokenizer::iskeyword(char *ptr)
@@ -100,8 +110,9 @@ bool gcc::tokenizer::iskeyword(char *ptr)
 
     for (int i = 0; i < 42; ++i) {
         if (!strncmp(ptr, keywords[i], strlen(keywords[i]))) {
-            if (!isalnum(*(ptr + strlen(keywords[i]))) && *(ptr + strlen(keywords[i])) != '_')
+            if (!isalnum(*(ptr + strlen(keywords[i]))) && *(ptr + strlen(keywords[i])) != '_') {
                 return true;
+            }
         }
     }
 
@@ -115,27 +126,37 @@ char *gcc::tokenizer::get_number(char *ptr)
     while (*ptr && isdigit(*ptr))
         value = (value * 10) + *ptr++ - '0';
 
-    tokens_.add({ TT_DIGIT, value });
+    token_t tok;
+    tok.type = TT_DIGIT;
+    tok.data.value = value;
+    tokens_.add(tok);
+
     return ptr;
 }
 
-char *gcc::tokenizer::get_operand(char *ptr)
+char *gcc::tokenizer::get_operator(char *ptr)
 {
     switch (*ptr) {
         case '*':
-            tokens_.add({ TT_MUL, *ptr });
+            tokens_.add({ TT_MUL, 0 });
             break;
         case '+':
-            tokens_.add({ TT_ADD, *ptr });
+            tokens_.add({ TT_ADD, 0 });
             break;
         case '-':
-            tokens_.add({ TT_SUB, *ptr });
+            tokens_.add({ TT_SUB, 0 });
             break;
         case '/':
-            tokens_.add({ TT_DIV, *ptr });
+            tokens_.add({ TT_DIV, 0 });
+            break;
+        case ',':
+            tokens_.add({ TT_COMMA, 0 });
+            break;
+        case ';':
+            tokens_.add({ TT_SEMICOLON, 0 });
             break;
         default:
-            ERROR("unexpected operand token %c\n", *ptr);
+            ERROR("unexpected operand token '%c'\n", *ptr);
             return nullptr;
     }
 
@@ -144,28 +165,63 @@ char *gcc::tokenizer::get_operand(char *ptr)
 
 char *gcc::tokenizer::get_keyword(char *ptr)
 {
-    const char *keywords[] = {
-        "break",    "case",     "char",     "const",
-        "continue", "default",  "do",       "double",
-        "else",     "enum",     "extern",   "float",
-        "for",      "goto",     "if",       "inline",
-        "int",      "long",     "register", "restrict",
-        "return",   "short",    "signed",   "sizeof",
-        "static",   "struct",   "switch",   "typedef",
-        "union",    "unsigned", "void",     "volatile",
-        "while",    "uint8_t",  "uint16_t", "uint32_t",
-        "uint64_t", "int8_t",   "int16_t",  "int32_t",
-        "int64_t",  "size_t"
+    struct {
+        token_type_t type;
+        const char *str;
+    } keywords[] = {
+        { TT_BREAK,    "break"    }, { TT_CASE,     "case"     }, { TT_CHAR,     "char" },
+        { TT_CONST,    "const"    }, { TT_CONTINUE, "continue" }, { TT_DEFAULT,  "default" },
+        { TT_DO,       "do"       }, { TT_DOUBLE,   "double"   }, { TT_ELSE,     "else" },
+        { TT_ENUM,     "enum"     }, { TT_EXTERN,   "extern"   }, { TT_FLOAT,    "float" },
+        { TT_FOR,      "for"      }, { TT_GOTO,     "goto"     }, { TT_IF,       "if" },
+        { TT_INLINE,   "inline"   }, { TT_INT,      "int"      }, { TT_LONG,     "long" },
+        { TT_REGISTER, "register" }, { TT_RESTRICT, "restrict" }, { TT_RETURN,   "return" },
+        { TT_SHORT,    "short"    }, { TT_SIGNED,   "signed"   }, { TT_SIZEOF,   "sizeof" },
+        { TT_STATIC,   "static"   }, { TT_STRUCT,   "struct"   }, { TT_SWITCH,   "switch" },
+        { TT_TYPEDEF,  "typedef"  }, { TT_UNION,    "union"    }, { TT_UNSIGNED, "unsigned" },
+        { TT_VOID,     "void"     }, { TT_VOLATILE, "volatile" }, { TT_WHILE,    "while" },
+        { TT_U8,       "uint8_t"  }, { TT_U16,      "uint16_t" }, { TT_U32,      "uint32_t" },
+        { TT_U64,      "uint64_t" }, { TT_I8,       "int8_t"   }, { TT_I16,      "int16_t" },
+        { TT_I32,      "int32_t"  }, { TT_I64,      "int64_t"  }, { TT_SIZET,    "size_t" },
     };
 
     for (int i = 0; i < 42; ++i) {
-        if (!strncmp(ptr, keywords[i], strlen(keywords[i]))) {
-            if (!isalnum(*(ptr + strlen(keywords[i]))) && *(ptr + strlen(keywords[i])) != '_') {
-                tokens_.add({ });
-                return ptr + strlen(keywords[i]);
+        if (!strncmp(ptr, keywords[i].str, strlen(keywords[i].str))) {
+            if (!isalnum(*(ptr + strlen(keywords[i].str))) && *(ptr + strlen(keywords[i].str)) != '_') {
+                tokens_.add({ keywords[i].type, 0 });
+                return ptr + strlen(keywords[i].str);
             }
         }
     }
+}
+
+bool gcc::tokenizer::isidentifier(char *ptr)
+{
+    if (isalpha(*ptr) || *ptr == '_')
+        return true;
+    return false;
+}
+
+char *gcc::tokenizer::get_identifier(char *ptr)
+{
+    size_t len    = 0;
+    char *tok     = nullptr;
+    char *saveptr = ptr;
+
+    while (isalpha(*ptr) || *ptr == '_')
+        len++, ptr++;
+
+    if (!(tok = (char *)malloc(len + 1))) {
+        ERROR("Failed to allocate memory for identifier!");
+        return nullptr;
+    }
+
+    memcpy(tok, saveptr, len);
+    tok[len] = 0;
+
+    tokens_.add({ TT_IDENTIFIER, tok });
+
+    return saveptr + len;
 }
 
 gcc_error_t gcc::tokenizer::tokenize(char *file)
@@ -188,12 +244,16 @@ gcc_error_t gcc::tokenizer::tokenize(char *file)
         if (isdigit(*ptr)) {
             ptr = get_number(ptr);
             continue;
-        } else if (isoperand(*ptr)) {
-            if (!(ptr = get_operand(ptr)))
+        } else if (isoperator(ptr)) {
+            if (!(ptr = get_operator(ptr)))
                 return GCC_INVALID_VALUE;
             continue;
         } else if (iskeyword(ptr)) {
             if (!(ptr = get_keyword(ptr)))
+                return GCC_INVALID_VALUE;
+            continue;
+        } else if (isidentifier(ptr)) {
+            if (!(ptr = get_identifier(ptr)))
                 return GCC_INVALID_VALUE;
             continue;
         }

@@ -55,15 +55,19 @@ namespace gcc {
         TT_I32,
         TT_I64,
         TT_SIZET,
+        TT_COMMA,
+        TT_SEMICOLON,
+        TT_IDENTIFIER,
         TT_LAST
     } token_type_t;
 
     typedef struct token {
         token_type_t type;
         union {
+            char *str;
             int value;
             int id;
-        };
+        } data;
     } token_t;
 
     static inline const char *test_func(token_type_t type)
