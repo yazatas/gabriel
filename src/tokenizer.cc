@@ -166,25 +166,22 @@ bool gcc::tokenizer::get_operator(char **ptr)
     return false;
 }
 
-bool gcc::tokenizer::isidentifier(char *ptr)
-{
-    if (isalpha(*ptr) || *ptr == '_')
-        return true;
-    return false;
-}
-
-char *gcc::tokenizer::get_identifier(char *ptr)
+bool gcc::tokenizer::get_identifier(char **ptr)
 {
     size_t len    = 0;
     char *tok     = nullptr;
-    char *saveptr = ptr;
+    char *saveptr = *ptr;
+    char *uptr    = *ptr;
 
-    while (isalpha(*ptr) || *ptr == '_')
-        len++, ptr++;
+    if (!isalpha(*uptr) && *uptr != '_')
+        return false;
+
+    while (isalpha(*uptr) || *uptr == '_')
+        len++, (uptr)++;
 
     if (!(tok = (char *)malloc(len + 1))) {
         ERROR("Failed to allocate memory for identifier!");
-        return nullptr;
+        return false;
     }
 
     memcpy(tok, saveptr, len);
@@ -192,7 +189,8 @@ char *gcc::tokenizer::get_identifier(char *ptr)
 
     tokens_.add({ TT_IDENTIFIER, tok });
 
-    return saveptr + len;
+    *ptr = saveptr + len;
+    return true;
 }
 
 gcc_error_t gcc::tokenizer::tokenize(char *file)
@@ -219,10 +217,10 @@ gcc_error_t gcc::tokenizer::tokenize(char *file)
             continue;
         } else if (get_keyword(&ptr)) {
             continue;
-        } else if (isidentifier(ptr)) {
-            if (!(ptr = get_identifier(ptr)))
-                return GCC_INVALID_VALUE;
+        } else if (get_identifier(&ptr)) {
             continue;
+        } else {
+            ERROR("nothing above!\n");
         }
 
         ERROR("invalid token stream: '%c' '%s'!\n", *ptr, ptr);

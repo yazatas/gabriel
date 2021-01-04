@@ -41,11 +41,8 @@ namespace gcc {
             /* extract keyword from the stream into a token */
             bool get_keyword(char **ptr);
 
-            /* is an identifier */
-            bool isidentifier(char *ptr);
-
             /* extract identifier from the stream into a token */
-            char *get_identifier(char *ptr);
+            bool get_identifier(char **ptr);
 
             gcc::token_stream_t tokens_;
     };
