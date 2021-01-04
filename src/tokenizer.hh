@@ -39,10 +39,7 @@ namespace gcc {
             bool get_operator(char **ptr);
 
             /* extract keyword from the stream into a token */
-            char *get_keyword(char *ptr);
-
-            /* is a defined keyword such as extern, bool, while etc. */
-            bool iskeyword(char *ptr);
+            bool get_keyword(char **ptr);
 
             /* is an identifier */
             bool isidentifier(char *ptr);

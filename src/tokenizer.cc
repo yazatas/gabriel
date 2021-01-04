@@ -69,33 +69,6 @@ char *gcc::tokenizer::skip_comments(char *ptr)
     return ptr;
 }
 
-bool gcc::tokenizer::iskeyword(char *ptr)
-{
-    const char *keywords[] = {
-        "break",    "case",     "char",     "const",
-        "continue", "default",  "do",       "double",
-        "else",     "enum",     "extern",   "float",
-        "for",      "goto",     "if",       "inline",
-        "int",      "long",     "register", "restrict",
-        "return",   "short",    "signed",   "sizeof",
-        "static",   "struct",   "switch",   "typedef",
-        "union",    "unsigned", "void",     "volatile",
-        "while",    "uint8_t",  "uint16_t", "uint32_t",
-        "uint64_t", "int8_t",   "int16_t",  "int32_t",
-        "int64_t",  "size_t"
-    };
-
-    for (int i = 0; i < 42; ++i) {
-        if (!strncmp(ptr, keywords[i], strlen(keywords[i]))) {
-            if (!isalnum(*(ptr + strlen(keywords[i]))) && *(ptr + strlen(keywords[i])) != '_') {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
 char *gcc::tokenizer::get_number(char *ptr)
 {
     int value = 0;
@@ -109,6 +82,48 @@ char *gcc::tokenizer::get_number(char *ptr)
     tokens_.add(tok);
 
     return ptr;
+}
+
+bool gcc::tokenizer::get_keyword(char **ptr)
+{
+    struct {
+        const char *s;
+        token_type_t type;
+    } keywords[] = {
+        { "break",    TT_BREAK },    { "case",     TT_CASE },
+        { "char",     TT_CHAR },     { "const",    TT_CONST },
+        { "continue", TT_CONTINUE }, { "default",  TT_DEFAULT },
+        { "do",       TT_DO },       { "double",   TT_DOUBLE },
+        { "else",     TT_ELSE },     { "enum",     TT_ENUM },
+        { "extern",   TT_EXTERN },   { "float",    TT_FLOAT },
+        { "for",      TT_FOR },      { "goto",     TT_GOTO },
+        { "if",       TT_IF },       { "inline",   TT_INLINE },
+        { "int",      TT_INT },      { "long",     TT_LONG },
+        { "register", TT_REGISTER }, { "restrict", TT_RESTRICT },
+        { "return",   TT_RETURN },   { "short",    TT_SHORT },
+        { "signed",   TT_SIGNED },   { "sizeof",   TT_SIZEOF },
+        { "static",   TT_STATIC },   { "struct",   TT_STRUCT },
+        { "switch",   TT_SWITCH },   { "typedef",  TT_TYPEDEF },
+        { "union",    TT_UNION },    { "unsigned", TT_UNSIGNED },
+        { "void",     TT_VOID },     { "volatile", TT_VOLATILE },
+        { "while",    TT_WHILE },    { "uint8_t",  TT_U8 },
+        { "uint16_t", TT_U16 },      { "uint32_t", TT_U32 },
+        { "uint64_t", TT_U64 },      { "int8_t",   TT_I8 },
+        { "int16_t",  TT_I16 },      { "int32_t",  TT_I32 },
+        { "int64_t",  TT_I64 },      { "size_t",   TT_SIZET }
+    };
+
+    for (int i = 0; i < 42; ++i) {
+        if (!strncmp(*ptr, keywords[i].s, strlen(keywords[i].s))) {
+            if (!isalnum(*(*ptr + strlen(keywords[i].s))) && *(*ptr + strlen(keywords[i].s)) != '_') {
+                tokens_.add({ keywords[i].type, 0 });
+                *ptr = *ptr + strlen(keywords[i].s);
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 bool gcc::tokenizer::get_operator(char **ptr)
@@ -151,38 +166,6 @@ bool gcc::tokenizer::get_operator(char **ptr)
     return false;
 }
 
-char *gcc::tokenizer::get_keyword(char *ptr)
-{
-    struct {
-        token_type_t type;
-        const char *str;
-    } keywords[] = {
-        { TT_BREAK,    "break"    }, { TT_CASE,     "case"     }, { TT_CHAR,     "char" },
-        { TT_CONST,    "const"    }, { TT_CONTINUE, "continue" }, { TT_DEFAULT,  "default" },
-        { TT_DO,       "do"       }, { TT_DOUBLE,   "double"   }, { TT_ELSE,     "else" },
-        { TT_ENUM,     "enum"     }, { TT_EXTERN,   "extern"   }, { TT_FLOAT,    "float" },
-        { TT_FOR,      "for"      }, { TT_GOTO,     "goto"     }, { TT_IF,       "if" },
-        { TT_INLINE,   "inline"   }, { TT_INT,      "int"      }, { TT_LONG,     "long" },
-        { TT_REGISTER, "register" }, { TT_RESTRICT, "restrict" }, { TT_RETURN,   "return" },
-        { TT_SHORT,    "short"    }, { TT_SIGNED,   "signed"   }, { TT_SIZEOF,   "sizeof" },
-        { TT_STATIC,   "static"   }, { TT_STRUCT,   "struct"   }, { TT_SWITCH,   "switch" },
-        { TT_TYPEDEF,  "typedef"  }, { TT_UNION,    "union"    }, { TT_UNSIGNED, "unsigned" },
-        { TT_VOID,     "void"     }, { TT_VOLATILE, "volatile" }, { TT_WHILE,    "while" },
-        { TT_U8,       "uint8_t"  }, { TT_U16,      "uint16_t" }, { TT_U32,      "uint32_t" },
-        { TT_U64,      "uint64_t" }, { TT_I8,       "int8_t"   }, { TT_I16,      "int16_t" },
-        { TT_I32,      "int32_t"  }, { TT_I64,      "int64_t"  }, { TT_SIZET,    "size_t" },
-    };
-
-    for (int i = 0; i < 42; ++i) {
-        if (!strncmp(ptr, keywords[i].str, strlen(keywords[i].str))) {
-            if (!isalnum(*(ptr + strlen(keywords[i].str))) && *(ptr + strlen(keywords[i].str)) != '_') {
-                tokens_.add({ keywords[i].type, 0 });
-                return ptr + strlen(keywords[i].str);
-            }
-        }
-    }
-}
-
 bool gcc::tokenizer::isidentifier(char *ptr)
 {
     if (isalpha(*ptr) || *ptr == '_')
@@ -207,7 +190,7 @@ char *gcc::tokenizer::get_identifier(char *ptr)
     memcpy(tok, saveptr, len);
     tok[len] = 0;
 
-    /* tokens_.add({ TT_IDENTIFIER, tok }); */
+    tokens_.add({ TT_IDENTIFIER, tok });
 
     return saveptr + len;
 }
@@ -234,9 +217,7 @@ gcc_error_t gcc::tokenizer::tokenize(char *file)
             continue;
         } else if (get_operator(&ptr)) {
             continue;
-        } else if (iskeyword(ptr)) {
-            if (!(ptr = get_keyword(ptr)))
-                return GCC_INVALID_VALUE;
+        } else if (get_keyword(&ptr)) {
             continue;
         } else if (isidentifier(ptr)) {
             if (!(ptr = get_identifier(ptr)))
