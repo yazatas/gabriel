@@ -36,10 +36,7 @@ namespace gcc {
             char *get_number(char *ptr);
 
             /* extract operand from the stream into a token */
-            char *get_operator(char *ptr);
-
-            /* is "c" an operand (*, +, -, &&, <<, etc.)*/
-            bool isoperator(char *ptr);
+            bool get_operator(char **ptr);
 
             /* extract keyword from the stream into a token */
             char *get_keyword(char *ptr);

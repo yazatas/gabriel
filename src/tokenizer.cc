@@ -62,34 +62,11 @@ char *gcc::tokenizer::skip_comments(char *ptr)
     } else if (*ptr == '/' && *(ptr + 1) == '*') {
         ptr += 2;
 
-        while (*ptr != '*' && *(ptr + 1) != '/')
+        while (*ptr != '*' || *(ptr + 1) != '/')
             ptr++;
     }
 
     return ptr;
-}
-
-bool gcc::tokenizer::isoperator(char *ptr)
-{
-    const char *operators[] = {
-        "&", "|", "^", "~",
-        "*", "-", "/", "+",
-        "*=", "-=", "/=", "+=",
-        "&&", "||", "==", ">=",
-        "<=", "<<", ">>", "<<=",
-        ">>=", "^=", "++", "--"
-        "(", ")", "[", "]", 
-        "{", "}", "?", ":", 
-        "!", ";", ",", ".", 
-        "<", ">"
-    };
-
-    for (int i = 0; i < 34; ++i) {
-        if (!strncmp(ptr, operators[i], strlen(operators[i])))
-            return true;
-    }
-
-    return false;
 }
 
 bool gcc::tokenizer::iskeyword(char *ptr)
@@ -134,33 +111,44 @@ char *gcc::tokenizer::get_number(char *ptr)
     return ptr;
 }
 
-char *gcc::tokenizer::get_operator(char *ptr)
+bool gcc::tokenizer::get_operator(char **ptr)
 {
-    switch (*ptr) {
-        case '*':
-            tokens_.add({ TT_MUL, 0 });
-            break;
-        case '+':
-            tokens_.add({ TT_ADD, 0 });
-            break;
-        case '-':
-            tokens_.add({ TT_SUB, 0 });
-            break;
-        case '/':
-            tokens_.add({ TT_DIV, 0 });
-            break;
-        case ',':
-            tokens_.add({ TT_COMMA, 0 });
-            break;
-        case ';':
-            tokens_.add({ TT_SEMICOLON, 0 });
-            break;
-        default:
-            ERROR("unexpected operand token '%c'\n", *ptr);
-            return nullptr;
+    struct {
+        const char *s;
+        token_type_t type;
+    } operators[] = {
+        { "*=",  TT_MUL_ASSIGN },    { "-=",  TT_SUB_ASSIGN },
+        { "/=",  TT_DIV_ASSIGN },    { "+=",  TT_ADD_ASSIGN},
+        { "&&",  TT_AND_EXP },       { "||",  TT_OR_EXP },
+        { "==",  TT_EQUAL },         { ">=",  TT_EQ_LARGER },
+        { "<=",  TT_EQ_SMALLER },    { "<<",  TT_LSHIFT },
+        { ">>",  TT_RSHIFT },        { "<<=", TT_LSHIFT_ASSIGN },
+        { ">>=", TT_RSHIFT_ASSIGN }, { "^=",  TT_XOR_ASSIGN },
+        { "++",  TT_INCR },          { "--",  TT_DECR },
+        { "&",   TT_AND },           { "|",   TT_OR },
+        { "^",   TT_XOR },           { "~",   TT_ANOT },
+        { "*",   TT_MUL },           { "-",   TT_SUB },
+        { "/",   TT_DIV },           { "+",   TT_ADD },
+        { "(",   TT_LPAREN },        { ")",   TT_RPAREN },
+        { "[",   TT_LSQUARE },       { "]",   TT_RSQUARE },
+        { "{",   TT_LCURLY },        { "}",   TT_RCURLY },
+        { "?",   TT_QMARK },         { ":",   TT_COLON },
+        { "!",   TT_EXCLAMATION },   { ";",   TT_SEMICOLON },
+        { ",",   TT_COMMA },         { ".",   TT_DOT },
+        { "<",   TT_LTHAN },         { ">",   TT_GTHAN },
+        { "=",   TT_ASSIGN },        { "\"",  TT_QUOTE },
+        { "\'",  TT_SQUOTE }
+    };
+
+    for (int i = 0; i < 41; ++i) {
+        if (!strncmp(*ptr, operators[i].s, strlen(operators[i].s))) {
+            tokens_.add({ operators[i].type, 0 });
+            *ptr = *ptr + strlen(operators[i].s);
+            return true;
+        }
     }
 
-    return ptr + 1;
+    return false;
 }
 
 char *gcc::tokenizer::get_keyword(char *ptr)
@@ -219,7 +207,7 @@ char *gcc::tokenizer::get_identifier(char *ptr)
     memcpy(tok, saveptr, len);
     tok[len] = 0;
 
-    tokens_.add({ TT_IDENTIFIER, tok });
+    /* tokens_.add({ TT_IDENTIFIER, tok }); */
 
     return saveptr + len;
 }
@@ -244,9 +232,7 @@ gcc_error_t gcc::tokenizer::tokenize(char *file)
         if (isdigit(*ptr)) {
             ptr = get_number(ptr);
             continue;
-        } else if (isoperator(ptr)) {
-            if (!(ptr = get_operator(ptr)))
-                return GCC_INVALID_VALUE;
+        } else if (get_operator(&ptr)) {
             continue;
         } else if (iskeyword(ptr)) {
             if (!(ptr = get_keyword(ptr)))
@@ -258,7 +244,7 @@ gcc_error_t gcc::tokenizer::tokenize(char *file)
             continue;
         }
 
-        ERROR("invalid token stream: '%c'!\n", *ptr);
+        ERROR("invalid token stream: '%c' '%s'!\n", *ptr, ptr);
         return GCC_INVALID_VALUE;
     }
 
