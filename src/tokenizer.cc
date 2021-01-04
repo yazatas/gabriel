@@ -69,19 +69,24 @@ char *gcc::tokenizer::skip_comments(char *ptr)
     return ptr;
 }
 
-char *gcc::tokenizer::get_number(char *ptr)
+bool gcc::tokenizer::get_digit(char **ptr)
 {
-    int value = 0;
+    int value  = 0;
+    char *uptr = *ptr;
 
-    while (*ptr && isdigit(*ptr))
-        value = (value * 10) + *ptr++ - '0';
+    if (!isdigit(*uptr))
+        return false;
+
+    while (*ptr && isdigit(*uptr))
+        value = (value * 10) + *uptr++ - '0';
 
     token_t tok;
     tok.type = TT_DIGIT;
     tok.data.value = value;
     tokens_.add(tok);
 
-    return ptr;
+    *ptr = uptr;
+    return true;
 }
 
 bool gcc::tokenizer::get_keyword(char **ptr)
@@ -142,8 +147,8 @@ bool gcc::tokenizer::get_operator(char **ptr)
         { "++",  TT_INCR },          { "--",  TT_DECR },
         { "&",   TT_AND },           { "|",   TT_OR },
         { "^",   TT_XOR },           { "~",   TT_ANOT },
-        { "*",   TT_MUL },           { "-",   TT_SUB },
-        { "/",   TT_DIV },           { "+",   TT_ADD },
+        { "*",   TT_STAR },          { "-",   TT_MINUS },
+        { "/",   TT_DIV },           { "+",   TT_PLUS },
         { "(",   TT_LPAREN },        { ")",   TT_RPAREN },
         { "[",   TT_LSQUARE },       { "]",   TT_RSQUARE },
         { "{",   TT_LCURLY },        { "}",   TT_RCURLY },
@@ -210,8 +215,7 @@ gcc_error_t gcc::tokenizer::tokenize(char *file)
         if (!*(ptr = skip_comments(ptr)))
             break;
 
-        if (isdigit(*ptr)) {
-            ptr = get_number(ptr);
+        if (get_digit(&ptr)) {
             continue;
         } else if (get_operator(&ptr)) {
             continue;

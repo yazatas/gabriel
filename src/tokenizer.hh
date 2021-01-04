@@ -33,7 +33,7 @@ namespace gcc {
             char *skip_comments(char *ptr);
 
             /* extract number from the stream into a token */
-            char *get_number(char *ptr);
+            bool get_digit(char **ptr);
 
             /* extract operand from the stream into a token */
             bool get_operator(char **ptr);
