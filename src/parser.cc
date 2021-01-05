@@ -137,7 +137,7 @@ gcc::prog_t *gcc::parser::build_ast()
     gcc::prog_t *prog = new gcc::prog_t;
     token_t tok;
 
-    while (true) {
+    while (!tokens_.get(TT_END)) {
         type_t type = declaration_specifiers();
 
         if (type.type == TT_END)
@@ -166,11 +166,29 @@ gcc::prog_t *gcc::parser::build_ast()
         }
 
         /* global variable */
-        prog->globals.push_back({ type, strdup(tok.data.str) });
+        if (prog->globals.find(tok.str) != prog->globals.end()) {
+            ERROR("Duplicate global variable '%s'\n", tok.str.c_str());
+            return nullptr;
+        }
+
+        gcc::var_t var = { type, tok.str };
+        prog->globals.insert(std::make_pair(tok.str, var));
 
         while (tokens_.get(TT_COMMA)) {
             tok = tokens_.get();
-            prog->globals.push_back({ type, strdup(tok.data.str) });
+
+            if (tok.type != TT_IDENTIFIER) {
+                ERROR("Expected identifer, got %d\n", tok.type);
+                return nullptr;
+            }
+
+            if (prog->globals.find(tok.str) != prog->globals.end()) {
+                ERROR("Duplicate global variable '%s'\n", tok.str);
+                return nullptr;
+            }
+
+            gcc::var_t var = { type, tok.str };
+            prog->globals.insert(std::make_pair(tok.str, var));
         }
 
         EXPECT(TT_SEMICOLON, "Missing semicolon!\n");

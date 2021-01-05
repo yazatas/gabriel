@@ -2,6 +2,7 @@
 #define __PARSER_HH__
 
 #include <vector>
+#include <unordered_map>
 
 #include "ast.hh"
 #include "token.hh"
@@ -21,17 +22,17 @@ namespace gcc {
 
     typedef struct var {
         type_t type;
-        char *name;
+        std::string name;
     } var_t;
 
     typedef struct func {
         type_t ret_type;
-        char *name;
+        std::string name;
     } func_t;
 
     typedef struct prog {
-        std::vector<gcc::func_t> functions;
-        std::vector<gcc::var_t>  globals;
+        std::unordered_map<std::string, gcc::func_t> functions;
+        std::unordered_map<std::string, gcc::var_t>  globals;
     } prog_t;
 
     class parser {

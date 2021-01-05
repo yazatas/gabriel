@@ -82,7 +82,7 @@ bool gcc::tokenizer::get_digit(char **ptr)
 
     token_t tok;
     tok.type = TT_DIGIT;
-    tok.data.value = value;
+    tok.value = value;
     tokens_.add(tok);
 
     *ptr = uptr;
@@ -184,15 +184,9 @@ bool gcc::tokenizer::get_identifier(char **ptr)
     while (isalpha(*uptr) || *uptr == '_')
         len++, (uptr)++;
 
-    if (!(tok = (char *)malloc(len + 1))) {
-        ERROR("Failed to allocate memory for identifier!");
-        return false;
-    }
+    std::string ident(saveptr, len);
 
-    memcpy(tok, saveptr, len);
-    tok[len] = 0;
-
-    tokens_.add({ TT_IDENTIFIER, tok });
+    tokens_.add({ TT_IDENTIFIER, 0, ident });
 
     *ptr = saveptr + len;
     return true;

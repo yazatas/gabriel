@@ -98,11 +98,8 @@ namespace gcc {
 
     typedef struct token {
         token_type_t type;
-        union {
-            char *str;
-            int value;
-            int id;
-        } data;
+        int value;
+        std::string str;
     } token_t;
 
     static inline const char *test_func(token_type_t type)
@@ -124,6 +121,7 @@ namespace gcc {
 
     typedef struct token_stream {
         std::deque<token_t> tokens_;
+        token_t curr_;
 
         void add(token_t token)
         {
@@ -137,7 +135,22 @@ namespace gcc {
 
             token_t token = tokens_.front();
             tokens_.pop_front();
-            return token;
+            return (curr_ = token);
+        }
+
+        bool get(token_type_t type)
+        {
+            if (!tokens_.size() || tokens_.front().type != type)
+                return false;
+
+            curr_ = tokens_.front();
+            tokens_.pop_front();
+            return true;
+        }
+
+        token_t get_current()
+        {
+            return curr_;
         }
 
         void put(token_t token)
