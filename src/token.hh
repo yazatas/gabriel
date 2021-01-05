@@ -93,6 +93,7 @@ namespace gcc {
         TT_QUOTE,
         TT_SQUOTE,
         TT_IDENTIFIER,
+        TT_VAR,
         TT_LAST
     } token_type_t;
 

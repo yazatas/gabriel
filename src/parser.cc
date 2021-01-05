@@ -171,7 +171,7 @@ gcc::prog_t *gcc::parser::build_ast()
             return nullptr;
         }
 
-        gcc::var_t var = { type, tok.str };
+        gcc::var_t var = { { TT_VAR, 0 } , tok.str };
         prog->globals.insert(std::make_pair(tok.str, var));
 
         while (tokens_.get(TT_COMMA)) {
@@ -187,7 +187,7 @@ gcc::prog_t *gcc::parser::build_ast()
                 return nullptr;
             }
 
-            gcc::var_t var = { type, tok.str };
+            gcc::var_t var = { { TT_VAR, 0 }, tok.str };
             prog->globals.insert(std::make_pair(tok.str, var));
         }
 
