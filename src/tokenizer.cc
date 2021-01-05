@@ -181,7 +181,7 @@ bool gcc::tokenizer::get_identifier(char **ptr)
     if (!isalpha(*uptr) && *uptr != '_')
         return false;
 
-    while (isalpha(*uptr) || *uptr == '_')
+    while (isalnum(*uptr) || *uptr == '_')
         len++, (uptr)++;
 
     std::string ident(saveptr, len);
