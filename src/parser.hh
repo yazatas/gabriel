@@ -51,8 +51,8 @@ namespace gcc {
             /* parse the token stream into an abstract syntax tree */
             gcc_error_t parse(gcc::token_stream_t& tokens);
 
-            /* return the ast built by parse() */
-            gcc::ast_node *get_ast();
+            /* return the program built by the parser */
+            gcc::prog_t *get_prog();
 
         private:
             gcc::prog_t *build_ast();

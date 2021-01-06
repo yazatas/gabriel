@@ -29,9 +29,9 @@ gcc::parser::~parser()
     free(ast_);
 }
 
-gcc::ast_node *gcc::parser::get_ast()
+gcc::prog_t *gcc::parser::get_prog()
 {
-    return ast_;
+    return prog_;
 }
 
 void gcc::parser::statement()

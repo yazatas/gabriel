@@ -2,6 +2,7 @@
 #define __TOKEN_HH__
 
 #include <deque>
+#include <string>
 
 namespace gcc {
 
