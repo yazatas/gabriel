@@ -25,8 +25,6 @@ gcc::parser::parser():
 
 gcc::parser::~parser()
 {
-    gcc::destroy_ast(ast_);
-    free(ast_);
 }
 
 gcc::prog_t *gcc::parser::get_prog()
@@ -34,20 +32,283 @@ gcc::prog_t *gcc::parser::get_prog()
     return prog_;
 }
 
-void gcc::parser::statement()
+gcc::node_t *gcc::parser::make_node(token_type_t type, gcc::node_t *l, gcc::node_t *r)
 {
+    gcc::node_t *node = new gcc::node_t;
+
+    node->l    = l;
+    node->r    = r;
+    node->type = type;
+
+    return node;
+}
+
+gcc::node_t *gcc::parser::types()
+{
+    if (tokens_.get(TT_IDENTIFIER)) {
+        if (tokens_.get(TT_LPAREN)) {
+            EXPECT(TT_RPAREN, "Invalid token encountered: %d!\n");
+            WARN("function\n");
+        } else {
+            DEBUG("ELSE variable %d\n", tokens_.get_current().type);
+            gcc::node_t *node = new gcc::node_t;
+
+            node->l    = nullptr;
+            node->r    = nullptr;
+            node->type = TT_VAR;
+
+            return node;
+        }
+    }
+
+    ERROR("What else could it be!\n\n");
+}
+
+gcc::node_t *gcc::parser::postfix()
+{
+    gcc::node_t *node = types();
+
+    DEBUG("parse postfix\n");
+
+    return nullptr;
+}
+
+gcc::node_t *gcc::parser::prefix()
+{
+    gcc::node_t *l = postfix();
+
+    DEBUG("parse prefix\n");
+
+    return l;
+}
+
+gcc::node_t *gcc::parser::mul_div()
+{
+    gcc::node_t *l = prefix();
+
+    ERROR("unimplemented!\n");
+
+    /* TODO: parse mul/div */
+
+    return l;
+}
+
+gcc::node_t *gcc::parser::add_sub()
+{
+    gcc::node_t *l = mul_div();
+
+    ERROR("unimplemented!\n");
+
+    /* TODO: parse add/sub */
+
+    return l;
+}
+
+gcc::node_t *gcc::parser::bitwise_shift()
+{
+    gcc::node_t *l = add_sub();
+
+    ERROR("unimplemented!\n");
+
+    /* TODO: parse <</>> */
+
+    return l;
+}
+
+gcc::node_t *gcc::parser::relational()
+{
+    gcc::node_t *l = bitwise_shift();
+
+    if (tokens_.get(TT_EQ_LARGER)) {
+        /* TODO:  */
+    } else if (tokens_.get(TT_GTHAN)) {
+        /* TODO:  */
+    } else if (tokens_.get(TT_EQ_SMALLER)) {
+        /* TODO:  */
+    } else if (tokens_.get(TT_LTHAN)) {
+        return make_node(TT_LTHAN, l, bitwise_shift());
+    }
+
+    return l;
+}
+
+gcc::node_t *gcc::parser::equality()
+{
+    gcc::node_t *l = relational();
+
+    if (tokens_.get(TT_EQUAL)) {
+        DEBUG("parse equality\n");
+        return make_node(TT_EQUAL, l, relational());
+    } else if (tokens_.get(TT_NOT_EQUAL)) {
+        DEBUG("parse unequality\n");
+        /* TODO: parse inequality */
+    }
+
+    return l;
+}
+
+gcc::node_t *gcc::parser::bitwise_and()
+{
+    gcc::node_t *l = equality();
+
+    if (!tokens_.get(TT_AND))
+        return l;
+
+    DEBUG("parse bitwise and\n");
+
+    /* TODO: parse bitwise and */
+
+    return l;
+}
+
+gcc::node_t *gcc::parser::bitwise_xor()
+{
+    gcc::node_t *l = bitwise_and();
+
+    if (!tokens_.get(TT_XOR))
+        return l;
+
+    DEBUG("parse bitwise xor\n");
+
+    /* TODO: parse bitwise xor */
+
+    return l;
+}
+
+gcc::node_t *gcc::parser::bitwise_or()
+{
+    gcc::node_t *l = bitwise_xor();
+
+    /* TODO: parse bitwise or */
+    if (!tokens_.get(TT_OR))
+        return l;
+
+    DEBUG("parse bitwise or\n");
+
+    return l;
+}
+
+gcc::node_t *gcc::parser::logical_and()
+{
+    gcc::node_t *l = bitwise_or();
+
+    if (!tokens_.get(TT_AND_EXP))
+        return l;
+
+    DEBUG("parse logical and\n");
+
+    /* TODO: parse logical or */
+    return l;
+}
+
+gcc::node_t *gcc::parser::logical_or()
+{
+    gcc::node_t *l = logical_and();
+
+    if (!tokens_.get(TT_OR_EXP))
+        return l;
+
+    DEBUG("parse logical or\n");
+
+    /* TODO: parse logical or */
+    return l;
+}
+
+gcc::node_t *gcc::parser::conditional()
+{
+    gcc::node_t *l = logical_or();
+
+    if (!tokens_.get(TT_QMARK))
+        return l;
+
+    DEBUG("parse conditional\n");
+
+    /* TODO: parse ternary operator */
+    return l;
+}
+
+gcc::node_t *gcc::parser::assignment()
+{
+    DEBUG("parse assignment\n");
+
+    gcc::node_t *l = conditional();
+
+    /* TODO:  */
+    if (tokens_.get(TT_ASSIGN)) {
+
+    } else if (tokens_.get(TT_ADD_ASSIGN)) {
+
+    } else if (tokens_.get(TT_SUB_ASSIGN)) {
+    }
+
+    return l;
+}
+
+gcc::node_t *gcc::parser::expression()
+{
+    DEBUG("parse expression\n");
+
+    gcc::node_t *l = assignment();
+
+    if (tokens_.get(TT_COMMA))
+        return make_node(TT_COMMA, l, expression());
+    return l;
+}
+
+gcc::node_t *gcc::parser::statement()
+{
+    DEBUG("parse statement\n");
+
+    token_t tok = tokens_.get();
+
+    switch (tok.type) {
+        case TT_IF:
+        {
+            DEBUG("parse if\n");
+            EXPECT(TT_LPAREN, "Missing left parenthesis!\n");
+            gcc::node_t *node = new gcc::node_t;
+
+            node->cond = expression();
+            EXPECT(TT_RPAREN, "Missing left parenthesis!\n");
+
+            ERROR("successfully parsed?\n");
+
+            if (tokens_.get(TT_ELSE))
+                node->els = expression();
+        }
+        break;
+
+        case TT_FOR:
+            ERROR("parse for\n");
+            return nullptr;
+            break;
+
+        case TT_IDENTIFIER:
+            /* ERROR("parse function call\n"); */
+            break;
+
+        default:
+            /* ERROR("NOT SURE WHAT TO DO HERE!\n\n"); */
+            break;
+    }
+
+    /* TODO: assignments */
+    /* TODO: while */
+    /* TODO: do */
+    /* TODO: identifier (function call) */
+    return nullptr;
 }
 
 gcc::node_t *gcc::parser::compound_statement()
 {
-    /* TODO: assignments */
-    /* TODO: if/elseif  */
-    /* TODO: while */
-    /* TODO: for */
-    /* TODO: do */
-    /* TODO: identifier (function call) */
     ERROR("parse compound statement\n");
-    return nullptr;
+
+    gcc::node_t *node = new gcc::node_t;
+
+    while (!tokens_.get(TT_RCURLY))
+        node->statements.push_back(statement());
+
+    return node;
 }
 
 gcc::type_t gcc::parser::declaration_specifiers()
@@ -172,7 +433,7 @@ gcc::prog_t *gcc::parser::build_ast()
             gcc::func_t func;
 
             if (prog->functions.find(tok.str) != prog->functions.end()) {
-                ERROR("Duplicate function %s() found!\n", tok.str);
+                ERROR("Duplicate function %s() found!\n", tok.str.c_str());
                 return nullptr;
             }
 
