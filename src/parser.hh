@@ -11,6 +11,8 @@
 
 namespace gcc {
 
+    typedef struct node node_t;
+
     typedef struct type {
         token_type_t type; /* int, short, bool etc. */
         bool xtrn;         /* extern  */
@@ -25,9 +27,15 @@ namespace gcc {
         std::string name;
     } var_t;
 
+    struct node {
+        node_t *body;
+    };
+
     typedef struct func {
         type_t ret_type;
+        node_t node;
         std::string name;
+        std::unordered_map<std::string, gcc::var_t> args;
     } func_t;
 
     typedef struct prog {
@@ -49,7 +57,7 @@ namespace gcc {
         private:
             gcc::prog_t *build_ast();
             gcc::type_t declaration_specifiers();
-            void compound_statement();
+            gcc::node_t *compound_statement();
             void statement();
 
             gcc::ast_node *ast_;

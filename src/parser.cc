@@ -38,8 +38,16 @@ void gcc::parser::statement()
 {
 }
 
-void gcc::parser::compound_statement()
+gcc::node_t *gcc::parser::compound_statement()
 {
+    /* TODO: assignments */
+    /* TODO: if/elseif  */
+    /* TODO: while */
+    /* TODO: for */
+    /* TODO: do */
+    /* TODO: identifier (function call) */
+    ERROR("parse compound statement\n");
+    return nullptr;
 }
 
 gcc::type_t gcc::parser::declaration_specifiers()
@@ -161,7 +169,59 @@ gcc::prog_t *gcc::parser::build_ast()
 
         /* function */
         if (tokens_.get(TT_LPAREN)) {
-            ERROR("parse function arguments\n");
+            gcc::func_t func;
+
+            if (prog->functions.find(tok.str) != prog->functions.end()) {
+                ERROR("Duplicate function %s() found!\n", tok.str);
+                return nullptr;
+            }
+
+            func.name     = tok.str;
+            func.ret_type = { TT_FUNC };
+
+            do {
+                type_t type = declaration_specifiers();
+
+                if (type.type == TT_END)
+                    return prog;
+
+                if (type.type == TT_INVALID) {
+                    ERROR("Failed to parse declaration specifiers, invalid token encountered!\n");
+                    return nullptr;
+                }
+
+                if ((tok = tokens_.get()).type != TT_IDENTIFIER) {
+                    ERROR("invalid token! %d\n", tokens_.get().type);
+                    return nullptr;
+                }
+
+                if (func.args.find(tok.str) != func.args.end()) {
+                    ERROR("Duplicate variable %s for %s() found!\n", tok.str.c_str(), func.name.c_str());
+                    return nullptr;
+                }
+
+                gcc::var_t var;
+                var.name = tok.str;
+                var.type = { TT_VAR };
+
+                func.args.insert(std::make_pair(tok.str, var));
+
+                DEBUG("add parameter %s for %s()\n", tok.str.c_str(), func.name.c_str());
+
+                /* consume comma if there are multiple arguments */
+                tokens_.get(TT_COMMA);
+
+            } while (!tokens_.get(TT_RPAREN));
+
+            if (tokens_.get(TT_SEMICOLON)) {
+                DEBUG("function prototype\n");
+                continue;
+            }
+            EXPECT(TT_LCURLY, "Expected function body!\n");
+
+            func.node.body = compound_statement();
+            prog->functions.insert(std::make_pair(func.name, func));
+
             continue;
         }
 
@@ -183,7 +243,7 @@ gcc::prog_t *gcc::parser::build_ast()
             }
 
             if (prog->globals.find(tok.str) != prog->globals.end()) {
-                ERROR("Duplicate global variable '%s'\n", tok.str);
+                ERROR("Duplicate global variable '%s'\n", tok.str.c_str());
                 return nullptr;
             }
 
