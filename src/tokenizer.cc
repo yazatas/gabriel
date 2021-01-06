@@ -145,6 +145,7 @@ bool gcc::tokenizer::get_operator(char **ptr)
         { ">>",  TT_RSHIFT },        { "<<=", TT_LSHIFT_ASSIGN },
         { ">>=", TT_RSHIFT_ASSIGN }, { "^=",  TT_XOR_ASSIGN },
         { "++",  TT_INCR },          { "--",  TT_DECR },
+        { "->",  TT_ARROW },         { "!=",  TT_NOT_EQUAL },
         { "&",   TT_AND },           { "|",   TT_OR },
         { "^",   TT_XOR },           { "~",   TT_ANOT },
         { "*",   TT_STAR },          { "-",   TT_MINUS },
@@ -160,7 +161,7 @@ bool gcc::tokenizer::get_operator(char **ptr)
         { "\'",  TT_SQUOTE }
     };
 
-    for (int i = 0; i < 41; ++i) {
+    for (int i = 0; i < 43; ++i) {
         if (!strncmp(*ptr, operators[i].s, strlen(operators[i].s))) {
             tokens_.add({ operators[i].type, 0 });
             *ptr = *ptr + strlen(operators[i].s);
